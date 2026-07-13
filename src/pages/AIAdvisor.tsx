@@ -14,6 +14,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { AIAvatar } from '../components/AIAvatar';
 
 interface MessagePayload {
   affordability?: string;
@@ -46,6 +47,7 @@ export const AIAdvisor: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [avatarState, setAvatarState] = useState<'idle' | 'thinking' | 'speaking'>('idle');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'msg_1',
@@ -319,6 +321,10 @@ How will this impact my digital twin?`;
 
       setMessages((prev) => [...prev, aiResponse]);
       setIsTyping(false);
+      setAvatarState('speaking');
+      setTimeout(() => {
+        setAvatarState('idle');
+      }, 4500);
     }, 1200);
   };
 
@@ -335,6 +341,7 @@ How will this impact my digital twin?`;
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
+    setAvatarState('thinking');
 
     try {
       const response = await fetch('/api/advisor', {
@@ -363,6 +370,10 @@ How will this impact my digital twin?`;
         };
         setMessages((prev) => [...prev, aiMessage]);
         setIsTyping(false);
+        setAvatarState('speaking');
+        setTimeout(() => {
+          setAvatarState('idle');
+        }, 4500);
       }
 
     } catch (err) {
@@ -386,8 +397,8 @@ How will this impact my digital twin?`;
         {/* Chat Header */}
         <div className="px-5 py-4 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-blue-600/10 border border-blue-500/25 flex items-center justify-center text-blue-400">
-              <Bot className="h-4.5 w-4.5 animate-pulse" />
+            <div className="flex-shrink-0">
+              <AIAvatar size="sm" state={avatarState} />
             </div>
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -405,6 +416,25 @@ How will this impact my digital twin?`;
         {/* Chat Bubbles Scroll Area */}
         <div className="flex-grow p-5 overflow-y-auto space-y-4 custom-scrollbar bg-slate-950/20">
           
+          {/* Avatar Base Welcome Greeting Card */}
+          <div className="p-5 mb-4 rounded-xl bg-slate-900/50 border border-slate-850/80 flex flex-col sm:flex-row items-center gap-5 relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 h-32 w-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex-shrink-0">
+              <AIAvatar size="md" state={avatarState} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-display font-bold text-sm text-white">Aria — Your AI Wealth Avatar</h3>
+                <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/25 text-blue-400 text-[8px] font-extrabold uppercase tracking-widest">
+                  Avatar Sync
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
+                I am Aria, your Bank-integrated Wealth Twin. I monitor your cash flows, goals, and leverage. Ask me questions or simulate scenarios, and I will analyze them using my deterministic core ledgers.
+              </p>
+            </div>
+          </div>
+
           {messages.map((msg) => (
             <div 
               key={msg.id}
@@ -413,13 +443,15 @@ How will this impact my digital twin?`;
               }`}
             >
               {/* Avatar */}
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${
-                msg.sender === 'user' 
-                  ? 'bg-slate-800 border-slate-700 text-slate-350'
-                  : 'bg-blue-600/10 border-blue-500/20 text-blue-400'
-              }`}>
-                {msg.sender === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-              </div>
+              {msg.sender === 'user' ? (
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 border bg-slate-800 border-slate-700 text-slate-350">
+                  <User className="h-4 w-4" />
+                </div>
+              ) : (
+                <div className="flex-shrink-0">
+                  <AIAvatar size="sm" state={avatarState} />
+                </div>
+              )}
 
               {/* Message Bubble Body */}
               <div className={`space-y-2 w-full ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
