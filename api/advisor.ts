@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     const { message, context } = JSON.parse(body);
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.startsWith('your_')) {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ demoMode: true, message: "No Gemini API Key configured in vercel environment. Running in Demo Mode." }));
@@ -82,8 +82,28 @@ End with: "Disclaimer: This represents scenario analysis for educational guidanc
       })
     });
 
+    if (!response.ok) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ demoMode: true, message: "Gemini API request failed. Falling back to Demo Mode." }));
+      return;
+    }
+
     const data = await response.json();
-    const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to synthesize a response. Let me consult my core ledger.";
+    if (data.error) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ demoMode: true, message: data.error.message || "Gemini API returned an error. Falling back to Demo Mode." }));
+      return;
+    }
+
+    const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!replyText) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ demoMode: true, message: "Empty response from Gemini. Falling back to Demo Mode." }));
+      return;
+    }
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
